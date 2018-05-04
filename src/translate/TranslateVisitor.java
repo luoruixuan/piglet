@@ -152,13 +152,12 @@ public class TranslateVisitor extends GJDepthFirst<String, SymbolTable> {
 	   argu.addIndent(2);
 	   n.f8.accept(this, argu);
 	   String aimType = parseType(n.f1);
-	   argu.print("RETURN ", true);
 	   String s = n.f10.accept(this, argu);
+	   argu.println("RETURN "+argu.ansID);
 	   if (!argu.isAnsistor(aimType, s)) {
 		   //System.out.println("Type error. Return type does not match in function " + n.f2.f0.toString()+".");
 		   System.exit(1);
 	   }
-	   argu.print("\n");
 	   argu.addIndent(-2);
 	   argu.println("END");
 	   return aimType;
@@ -239,14 +238,14 @@ public class TranslateVisitor extends GJDepthFirst<String, SymbolTable> {
 	   String var = n.f0.f0.toString();
 	   String leftType = argu.getType(var);
 	   String Lid = argu.getID(var);
-	   argu.print("MOVE "+Lid+" ", true);
 	   String rightType = n.f2.accept(this, argu);
+	   // TODO
+	   argu.println("MOVE "+Lid+" "+argu.ansID);
 	   if (!argu.isAnsistor(leftType, rightType)) {
 		   //System.out.println("Type error in assignment.");
 		   System.exit(1);
 	   }
 	   argu.varInitialize(var);
-	   argu.print("\n");
 	   return null;
    }
 
@@ -263,11 +262,11 @@ public class TranslateVisitor extends GJDepthFirst<String, SymbolTable> {
 	   String var = n.f0.f0.toString();
 	   String idType = argu.getType(var);
 	   String Lid = argu.getID(var);
-	   argu.print("HSTORE PLUS "+Lid + " TIMES 4 ", true);
 	   String expType = n.f2.accept(this, argu);
-	   argu.print(" 0 ");
+	   argu.push(argu.ansID);
 	   String rightType = n.f5.accept(this, argu);
-	   argu.print("\n");
+	   argu.pop(argu.tmpID);
+	   argu.println("HSTORE PLUS "+Lid + " TIMES 4 "+argu.tmpID+" 4 "+argu.ansID);
 	   if (!expType.equals("int")) {
 		   //System.out.println("Type error. Array index must be integer.");
 		   System.exit(1);
@@ -298,9 +297,7 @@ public class TranslateVisitor extends GJDepthFirst<String, SymbolTable> {
 	   L1 = argu.getLabel();
 	   L2 = argu.getLabel();
 	   String expType = n.f2.accept(this, argu);
-	   argu.print("CJUMP ",true);
-	   n.f2.accept(this, argu);
-	   argu.print(" "+L1+"\n");
+	   argu.println("CJUMP "+argu.ansID+" "+L1);
 	   n.f6.accept(this, argu);
 	   argu.println("JUMP "+L2);
 	   System.out.println(L1);
@@ -327,9 +324,8 @@ public class TranslateVisitor extends GJDepthFirst<String, SymbolTable> {
 	   L1 = argu.getLabel();
 	   L2 = argu.getLabel();
 	   System.out.println(L0);
-	   argu.print("CJUMP ",true);
 	   String expType = n.f2.accept(this, argu);
-	   argu.print(" "+L1+"\n");
+	   argu.println("CJUMP "+argu.ansID+" "+L1);
 	   argu.println("JUMP "+L2);
 	   System.out.println(L1);
 	   n.f4.accept(this, argu);
@@ -351,9 +347,9 @@ public class TranslateVisitor extends GJDepthFirst<String, SymbolTable> {
     * f4 -> ";"
     */
    public String visit(PrintStatement n, SymbolTable argu) {
-	   argu.print("PRINT ", true);
+	   
 	   String expType = n.f2.accept(this, argu);
-	   argu.print("\n");
+	   argu.println("PRINT "+argu.ansID);
 	   if (!expType.equals("int")) {
 		   //System.out.println("Type error. You must print an integer.");
 		   System.exit(1);
@@ -383,7 +379,10 @@ public class TranslateVisitor extends GJDepthFirst<String, SymbolTable> {
     */
    public String visit(AndExpression n, SymbolTable argu) {
 	   String type0 = n.f0.accept(this, argu);
+	   argu.push(argu.ansID);
 	   String type2 = n.f2.accept(this, argu);
+	   argu.pop(argu.tmpID);
+	   argu.println("MOVE "+argu.ansID+" TIMES "+argu.tmpID+" "+argu.ansID);
 	   if (!type0.equals("boolean")||!type2.equals("boolean")) {
 		   //System.out.println("Type error. && operator can only be applied on booleans.");
 		   System.exit(1);
@@ -398,7 +397,10 @@ public class TranslateVisitor extends GJDepthFirst<String, SymbolTable> {
     */
    public String visit(CompareExpression n, SymbolTable argu) {
 	   String type0 = n.f0.accept(this, argu);
+	   argu.push(argu.ansID);
 	   String type2 = n.f2.accept(this, argu);
+	   argu.pop(argu.tmpID);
+	   argu.println("MOVE "+argu.ansID+" LT "+argu.tmpID+" "+argu.ansID);
 	   if (!type0.equals("int")||!type2.equals("int")) {
 		   //System.out.println("Type error. < operator can only be applied on integers.");
 		   System.exit(1);
@@ -413,7 +415,10 @@ public class TranslateVisitor extends GJDepthFirst<String, SymbolTable> {
     */
    public String visit(PlusExpression n, SymbolTable argu) {
 	   String type0 = n.f0.accept(this, argu);
+	   argu.push(argu.ansID);
 	   String type2 = n.f2.accept(this, argu);
+	   argu.pop(argu.tmpID);
+	   argu.println("MOVE "+argu.ansID+" PLUS "+argu.tmpID+" "+argu.ansID);
 	   if (!type0.equals("int")||!type2.equals("int")) {
 		   //System.out.println("Type error. + operator can only be applied on integers.");
 		   System.exit(1);
@@ -428,7 +433,10 @@ public class TranslateVisitor extends GJDepthFirst<String, SymbolTable> {
     */
    public String visit(MinusExpression n, SymbolTable argu) {
 	   String type0 = n.f0.accept(this, argu);
+	   argu.push(argu.ansID);
 	   String type2 = n.f2.accept(this, argu);
+	   argu.pop(argu.tmpID);
+	   argu.println("MOVE "+argu.ansID+" MINUS "+argu.tmpID+" "+argu.ansID);
 	   if (!type0.equals("int")||!type2.equals("int")) {
 		   //System.out.println("Type error. - operator can only be applied on integers.");
 		   System.exit(1);
@@ -443,7 +451,10 @@ public class TranslateVisitor extends GJDepthFirst<String, SymbolTable> {
     */
    public String visit(TimesExpression n, SymbolTable argu) {
 	   String type0 = n.f0.accept(this, argu);
+	   argu.push(argu.ansID);
 	   String type2 = n.f2.accept(this, argu);
+	   argu.pop(argu.tmpID);
+	   argu.println("MOVE "+argu.ansID+" TIMES "+argu.tmpID+" "+argu.ansID);
 	   if (!type0.equals("int")||!type2.equals("int")) {
 		   //System.out.println("Type error. * operator can only be applied on integers.");
 		   System.exit(1);
@@ -459,7 +470,10 @@ public class TranslateVisitor extends GJDepthFirst<String, SymbolTable> {
     */
    public String visit(ArrayLookup n, SymbolTable argu) {
 	   String type0 = n.f0.accept(this, argu);
+	   argu.push(argu.ansID);
 	   String type2 = n.f2.accept(this, argu);
+	   argu.pop(argu.tmpID);
+	   argu.println("HLOAD "+argu.ansID+" PLUS TIMES 4 "+argu.ansID+" "+argu.tmpID+" 4");
 	   if (!type0.equals("int*")) {
 		   //System.out.println("Type error. Type " + type0 + " is not an array.");
 		   System.exit(1);
@@ -478,6 +492,7 @@ public class TranslateVisitor extends GJDepthFirst<String, SymbolTable> {
     */
    public String visit(ArrayLength n, SymbolTable argu) {
 	   String type0 = n.f0.accept(this, argu);
+	   argu.println("HLOAD "+argu.ansID+" "+argu.ansID+" 0");
 	   if (!type0.equals("int*")) {
 		   //System.out.println("Type error. Type " + type0 + " is not an array.");
 		   System.exit(1);
@@ -494,12 +509,16 @@ public class TranslateVisitor extends GJDepthFirst<String, SymbolTable> {
     * f5 -> ")"
     */
    public String visit(MessageSend n, SymbolTable argu) {
-	   String explst = n.f4.accept(this, argu);
 	   String type0 = n.f0.accept(this, argu);
+	   argu.save();
+	   argu.push(argu.ansID);
+	   String explst = n.f4.accept(this, argu);
 	   String M = n.f2.f0.toString();
 	   //System.out.println(type0);
 	   //System.out.println(M);
 	   //System.out.println(explst);
+	   argu.call(type0, M, explst);
+	   argu.restore();
 	   if (!argu.checkMethodArgsType(type0, M, explst)) {
 		   //System.out.println("Argument not match.");
 		   System.exit(1);
@@ -512,7 +531,9 @@ public class TranslateVisitor extends GJDepthFirst<String, SymbolTable> {
     * f1 -> ( ExpressionRest() )*
     */
    public String visit(ExpressionList n, SymbolTable argu) {
-	   return n.f0.accept(this, argu) + n.f1.accept(this, argu);
+	   String s0 = n.f0.accept(this, argu);
+	   argu.push(argu.ansID);
+	   return s0 + n.f1.accept(this, argu);
    }
 
    /**
@@ -542,6 +563,7 @@ public class TranslateVisitor extends GJDepthFirst<String, SymbolTable> {
     * f0 -> <INTEGER_LITERAL>
     */
    public String visit(IntegerLiteral n, SymbolTable argu) {
+	   argu.println("MOVE "+argu.ansID+" "+n.f0.toString());
 	   return "int";
    }
 
@@ -549,6 +571,7 @@ public class TranslateVisitor extends GJDepthFirst<String, SymbolTable> {
     * f0 -> "true"
     */
    public String visit(TrueLiteral n, SymbolTable argu) {
+	   argu.println("MOVE "+argu.ansID+" 1");
 	   return "boolean";
    }
 
@@ -556,14 +579,17 @@ public class TranslateVisitor extends GJDepthFirst<String, SymbolTable> {
     * f0 -> "false"
     */
    public String visit(FalseLiteral n, SymbolTable argu) {
+	   argu.println("MOVE "+argu.ansID+" 0");
 	   return "boolean";
    }
 
    /**
     * f0 -> <IDENTIFIER>
     */
+   //TODO
    public String visit(Identifier n, SymbolTable argu) {
 	   String name = n.f0.toString();
+	   argu.println("MOVE "+argu.ansID+" "+argu.getId(name));
 		if (!argu.varIsInitialized(name)) {
 			//System.out.println("Variable " + name + " not initialized.");
 			System.exit(1);
@@ -575,6 +601,7 @@ public class TranslateVisitor extends GJDepthFirst<String, SymbolTable> {
     * f0 -> "this"
     */
    public String visit(ThisExpression n, SymbolTable argu) {
+	   argu.println("MOVE "+argu.ansID+" "+argu.getId("this"));
 	   return argu.getType("this");
    }
 
@@ -587,6 +614,7 @@ public class TranslateVisitor extends GJDepthFirst<String, SymbolTable> {
     */
    public String visit(ArrayAllocationExpression n, SymbolTable argu) {
 	   String type3 = n.f3.accept(this, argu);
+	   argu.println("MOVE "+argu.ansID+" HALLOCATE "+argu.ansID);
 	   if (!type3.equals("int")) {
 		   //System.out.println("Type error. Array must be allocated with an integer length.");
 		   System.exit(1);
@@ -602,6 +630,7 @@ public class TranslateVisitor extends GJDepthFirst<String, SymbolTable> {
     */
    public String visit(AllocationExpression n, SymbolTable argu) {
 	   String cls = n.f1.f0.toString();
+	   argu.println("MOVE "+argu.ansID+" HALLOCATE "+argu.sizeof(cls));
 	   if (!argu.hasClasses(cls)) {
 		   //System.out.println("No type " + cls + ".");
 		   System.exit(1);
@@ -615,6 +644,7 @@ public class TranslateVisitor extends GJDepthFirst<String, SymbolTable> {
     */
    public String visit(NotExpression n, SymbolTable argu) {
 	   String type1 = n.f1.accept(this, argu);
+	   argu.println("MOVE "+argu.ansID+" MINUS 1 "+argu.ansID);
 	   if (!type1.equals("boolean")) {
 		   //System.out.println("Type error. Expression after ! is not boolean type.");
 		   System.exit(1);
