@@ -83,6 +83,12 @@ public class TranslateVisitor extends GJDepthFirst<String, SymbolTable> {
     */
    public String visit(MainClass n, SymbolTable argu) {
 	   argu.setStatus(n.f1.f0.toString(), "main");
+	   argu.println("MAIN");
+	   argu.addIndent(2);
+	   argu.init();
+	   n.f15.accept(this, argu);
+	   argu.addIndent(-2);
+	   argu.println("END");
 	   n.f15.accept(this, argu);
 	   return null;
    }
@@ -237,10 +243,16 @@ public class TranslateVisitor extends GJDepthFirst<String, SymbolTable> {
    public String visit(AssignmentStatement n, SymbolTable argu) {
 	   String var = n.f0.f0.toString();
 	   String leftType = argu.getType(var);
-	   String Lid = argu.getID(var);
 	   String rightType = n.f2.accept(this, argu);
-	   // TODO
-	   argu.println("MOVE "+Lid+" "+argu.ansID);
+	   if (argu.isMember(var))
+	   {
+		   argu.println("HSTORE "+argu.getID("this")+" "+argu.getOffset(var)+" "+argu.ansID);
+	   }
+	   else
+	   {
+		   String Lid = argu.getID(var);
+		   argu.println("MOVE "+Lid+" "+argu.ansID);
+	   }
 	   if (!argu.isAnsistor(leftType, rightType)) {
 		   //System.out.println("Type error in assignment.");
 		   System.exit(1);
@@ -262,9 +274,15 @@ public class TranslateVisitor extends GJDepthFirst<String, SymbolTable> {
 	   String var = n.f0.f0.toString();
 	   String idType = argu.getType(var);
 	   String Lid = argu.getID(var);
+	   if (argu.isMember(var))
+	   {
+		   argu.println("HLOAD "+argu.Lid+" "+argu.getID("this")+" "+argu.getOffset(var));
+	   }
 	   String expType = n.f2.accept(this, argu);
 	   argu.push(argu.ansID);
+	   argu.push(Lid);
 	   String rightType = n.f5.accept(this, argu);
+	   argu.pop(Lid);
 	   argu.pop(argu.tmpID);
 	   argu.println("HSTORE PLUS "+Lid + " TIMES 4 "+argu.tmpID+" 4 "+argu.ansID);
 	   if (!expType.equals("int")) {
@@ -586,10 +604,16 @@ public class TranslateVisitor extends GJDepthFirst<String, SymbolTable> {
    /**
     * f0 -> <IDENTIFIER>
     */
-   //TODO
    public String visit(Identifier n, SymbolTable argu) {
 	   String name = n.f0.toString();
-	   argu.println("MOVE "+argu.ansID+" "+argu.getId(name));
+	   if (argu.isMember(name))
+	   {
+		   argu.println("HLOAD "+argu.ansID+" "+argu.getID("this")+" "+argu.getOffset(name));
+	   }
+	   else 
+	   {
+		   argu.println("MOVE "+argu.ansID+" "+argu.getID(name));
+	   }
 		if (!argu.varIsInitialized(name)) {
 			//System.out.println("Variable " + name + " not initialized.");
 			System.exit(1);
@@ -601,7 +625,7 @@ public class TranslateVisitor extends GJDepthFirst<String, SymbolTable> {
     * f0 -> "this"
     */
    public String visit(ThisExpression n, SymbolTable argu) {
-	   argu.println("MOVE "+argu.ansID+" "+argu.getId("this"));
+	   argu.println("MOVE "+argu.ansID+" "+argu.getID("this"));
 	   return argu.getType("this");
    }
 
