@@ -85,7 +85,7 @@ public class TranslateVisitor extends GJDepthFirst<String, SymbolTable> {
 	   argu.setStatus(n.f1.f0.toString(), "main");
 	   argu.println("MAIN");
 	   argu.addIndent(2);
-	   argu.init();
+	   argu.pigletMainInit();
 	   n.f15.accept(this, argu);
 	   argu.addIndent(-2);
 	   argu.println("END");
