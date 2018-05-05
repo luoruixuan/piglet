@@ -276,7 +276,7 @@ public class TranslateVisitor extends GJDepthFirst<String, SymbolTable> {
 	   String Lid = argu.getID(var);
 	   if (argu.isMember(var))
 	   {
-		   argu.println("HLOAD "+argu.Lid+" "+argu.getID("this")+" "+argu.getOffset(var));
+		   argu.println("HLOAD "+Lid+" "+argu.getID("this")+" "+argu.getOffset(var));
 	   }
 	   String expType = n.f2.accept(this, argu);
 	   argu.push(argu.ansID);
