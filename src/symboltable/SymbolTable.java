@@ -9,7 +9,17 @@ public class SymbolTable extends Symbol{
 	
 	// For type check
 	public String presentClass, presentMethod;
+	// For PIGLET
+	public int default_indent;
+	public String ansID = "TEMP 21";
+	public String tmpID = "TEMP 22";
+	// TEMP 23 for stack address
+	// TEMP 24 for stack pointer
+	int var_id = 25;
+	int label_id = 0;
+	public Hashtable<VarSymbol, Integer> varID;
 	
+	// constructer
 	public SymbolTable() {
 		ClassSymbol O = new ClassSymbol("Object", null);
 		mainclass = null;
@@ -155,6 +165,102 @@ public class SymbolTable extends Symbol{
 				System.exit(0);
 			}
 		}
+	}
+	
+	// To PIGLET
+	public void pigletMainInit() {
+		
+	}
+	
+	public String getMethodName() {
+		ClassSymbol cls = classes.get(presentClass);
+		MethodSymbol method = getMethodSymbol(cls, presentMethod);
+		if (method.argSize() == 0)
+			return "METHOD_"+cls.getName()+"_"+method.getName();
+		else
+			return "METHOD_"+cls.getName()+"_"+method.getName()+"["+method.argSize()+"]";
+	}
+	
+	public void println(String s) {
+		for (int i = 0; i < default_indent; i++)
+			s = " " + s;
+		System.out.println(s);
+	}
+	
+	public void addIndent(int x) {
+		default_indent += x;
+		if (default_indent < 0) {
+			System.out.println("BUG: invalid indent after add: "+default_indent);
+			System.exit(1);
+		}
+	}
+	
+	public void setIndent(int x) {
+		default_indent = x;
+		if (default_indent < 0) {
+			System.out.println("BUG: invalid indent when set: "+default_indent);
+			System.exit(1);
+		}
+	}
+	
+	public String getID(String var) {
+		VarSymbol varsym = getVarSymbol(var);
+		int ans = -1;
+		
+		if(varID.containsKey(varsym))
+			ans = varID.get(varsym); 
+		else {
+			ans = var_id;
+			varID.put(varsym, var_id);
+			var_id++;
+		}
+		
+		return "TEMP "+ans;
+	}
+	
+	public boolean isMember(String var) {
+		ClassSymbol cls = classes.get(presentClass);
+		return cls.hasVar(var);
+	}
+
+	public void push(String reg) {
+		
+	}
+	public void pop(String reg) {
+		
+	}
+	
+	public String getLabel() {
+		label_id++;
+		return "JUMP_LABEL_"+label_id;
+	}
+	
+	public void save() {
+		
+	}
+	
+	public void call(String cls, String method, String explst) {
+		
+	}
+	
+	public void restore() {
+		
+	}
+
+	public int sizeof(String cls) {
+		ClassSymbol cls_var = classes.get(cls);
+		
+		return 0;
+	}
+	
+	public int getOffset(String var) {
+		ClassSymbol cls = classes.get(presentClass);
+		if (!cls.hasVar(var)) {
+			System.out.println("BUG: invalid var symbol "+var+" in class: "+presentClass);
+			System.exit(1);
+		}
+		
+		
 	}
 	
 	// just for debug
