@@ -15,9 +15,9 @@ public class SymbolTable extends Symbol{
 	public String tmpID = "TEMP 2";
     public String stkID = "TEMP 3";
     public String sttID = "TEMP 4";
-	int var_id = 5;
+	Integer var_id = 5;
+	
 	int label_id = 0;
-	public Hashtable<VarSymbol, Integer> varID;
 	public Hashtable<String, Integer> funcID;
 	
 	// constructer
@@ -25,7 +25,6 @@ public class SymbolTable extends Symbol{
 		ClassSymbol O = new ClassSymbol("Object", null);
 		mainclass = null;
 		classes = new Hashtable<String, ClassSymbol>();
-		varID = new Hashtable<VarSymbol, Integer>();
 		funcID = new Hashtable<String, Integer>();
 		classes.put("Object", O);
 	}
@@ -184,16 +183,18 @@ public class SymbolTable extends Symbol{
 			}
 		}
 		
+		// PIGLET
 		i = classes.elements();
 		while(i.hasMoreElements()) {
 			ClassSymbol temp = i.nextElement();
 			temp.getMethodTable();
+			var_id = temp.allocateArgsID(var_id);
 		}
 	}
 	
 	// To PIGLET
 	public void pigletMainInit() {
-		println("MOVE "+stkID+" HALLOCATE 512");
+		println("MOVE "+stkID+" HALLOCATE 5120");
 
 		Iterator<String> i = classes.keySet().iterator();
 		while(i.hasNext()) {
@@ -261,38 +262,43 @@ public class SymbolTable extends Symbol{
 		return "TEMP "+ans;
 	}
 	
-	public String getID(String var) {
-		VarSymbol varsym = getVarSymbol(var);
-		if (varsym.getName().equals("this")) return "TEMP 0";
-		int ans = -1;
-		
-		if(varID.containsKey(varsym))
-			ans = varID.get(varsym); 
-		else {
-			ans = var_id;
-			varID.put(varsym, var_id);
-			var_id++;
-		}
-		
-		return "TEMP "+ans;
-	}
-	
 	public String getID(String cls, String method, String var) {
-		VarSymbol varsym = getVarSymbol(cls, method, var);
-		if (varsym.getName().equals("this")) return "TEMP 0";
-		int ans = -1;
-		
-		if(varID.containsKey(varsym))
-			ans = varID.get(varsym); 
-		else {
-			ans = var_id;
-			varID.put(varsym, var_id);
-			var_id++;
+		ClassSymbol cls_sym = classes.get(cls);
+		MethodSymbol method_sym = getMethodSymbol(cls_sym, method);
+		// give args var ID
+		if (var.equals("this")) return "TEMP 0";
+		for (int i = 0; i < method_sym.args_var.size(); ++i) 
+		if (var.equals(method_sym.args_var.elementAt(i).getName())) {
+			VarSymbol var_sym = method_sym.args_var.elementAt(i);
+			if (var_sym.getID() == -1) {
+				System.out.println("BUG: get unallocate var ID");
+				System.exit(1);
+			}
+			return "TEMP "+ var_sym.getID();
+		}
+		// allocate local var
+		if (method_sym.hasVar(var)) {
+			VarSymbol var_sym = method_sym.local_var.get(var);
+			if (var_sym.getID() == -1)
+				var_sym.setID(var_id++);
+			return "TEMP "+var_sym.getID();
+		}
+		// allocate member var
+		if (cls_sym.hasVar(var)) {
+			VarSymbol var_sym = cls_sym.cls_var.get(var);
+			if (var_sym.getID() == -1)
+				var_sym.setID(var_id++);
+			return "TEMP "+var_sym.getID();
 		}
 		
-		return "TEMP "+ans;
+		System.out.println("BUG: get unknown var ID in class "+cls+" in method "+method+": "+var);
+		System.exit(1);
+		return null;
 	}
 	
+	public String getID(String var) {
+		return getID(presentClass, presentMethod, var);
+	}
 	
 	public boolean isMember(String var) {
 		ClassSymbol cls = classes.get(presentClass);

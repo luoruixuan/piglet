@@ -153,6 +153,43 @@ public class ClassSymbol extends Symbol {
         		cls_method_offset.put(method_name, super_offset);
         }
     }
+    
+    public MethodSymbol hasMethod(String M) {
+    	if (sym_name.equals("Object")) return null;
+    	if (cls_method.containsKey(M)) return cls_method.get(M);
+        ClassSymbol Super = getSuper();
+    	return Super.hasMethod(M); 
+    }
+    
+    public int allocateArgsID(int var_id) {
+    	if (sym_name.equals("Object")) return var_id;
+        ClassSymbol Super = getSuper();
+        var_id = Super.allocateArgsID(var_id);
+        
+        Enumeration<MethodSymbol> method = cls_method.elements();
+        while(method.hasMoreElements()) {
+        	MethodSymbol method_sym = method.nextElement();
+        	MethodSymbol super_method_sym = Super.hasMethod(method_sym.getName());
+        		
+        	if (super_method_sym != null) {
+        		for (int i = 0; i < super_method_sym.args_var.size(); ++i) {
+            		VarSymbol var_sym = method_sym.args_var.elementAt(i);
+        			var_sym.setID(super_method_sym.args_var.elementAt(i).getID());
+        		}
+        	}
+        	else {
+        		for (int i = 0; i < method_sym.args_var.size(); ++i) {
+        			VarSymbol var_sym = method_sym.args_var.elementAt(i);
+        			var_sym.setID(var_id++);
+        		}
+        	}
+        }
+        
+    	
+        
+        
+        return var_id;
+    }
 	
 	// just for debug
 	public String toString() {
