@@ -21,7 +21,7 @@ public class Main{
 			ST.createSymbolTree();
 			TranslateVisitor TV = new TranslateVisitor();
 			root.accept(TV, ST);
-			System.out.println("Accpet.");
+			//System.out.println("Accpet.");
 		}catch (ParseException e){
 			e.printStackTrace();
 		}catch (TokenMgrError e){

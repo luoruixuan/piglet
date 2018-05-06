@@ -24,6 +24,7 @@ public class SymbolTable extends Symbol{
 		ClassSymbol O = new ClassSymbol("Object", null);
 		mainclass = null;
 		classes = new Hashtable<String, ClassSymbol>();
+		varID = new Hashtable<VarSymbol, Integer>();
 		classes.put("Object", O);
 	}
 	public void setStatus(String C, String M) {
@@ -302,5 +303,6 @@ public class SymbolTable extends Symbol{
 		}
 		return ret;
 	}
+
 }
 

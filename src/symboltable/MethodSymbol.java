@@ -15,6 +15,7 @@ public class MethodSymbol extends Symbol {
 	MethodSymbol(String name, String ret_type)
 	{
 		args_type = new Vector<String>();
+		args_var = new Vector<VarSymbol>();
 		local_var = new Hashtable<String, VarSymbol>();
 		setName(name);
 		setType(ret_type);
