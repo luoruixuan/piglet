@@ -320,6 +320,7 @@ public class SymbolTable extends Symbol{
 		
 		//push(ansID);
 		//push(tmpID);
+		push("TEMP 0");
 		while(i.hasMoreElements()) {
 			VarSymbol var = i.nextElement();
 			push(getID(var.getName()));
@@ -354,6 +355,7 @@ public class SymbolTable extends Symbol{
 		
 		for (int idx = var_lst.size()-1; idx >= 0; --idx)
 			pop(getID(var_lst.get(idx)));
+		pop("TEMP 0");
 		//pop(tmpID);
 		//pop(ansID);
 	}
