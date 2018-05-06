@@ -119,7 +119,7 @@ public class ClassSymbol extends Symbol {
     public int getOffset(String var_name) {
         if (sym_name.equals("Object")) return 0;
         ClassSymbol Super = getSuper();
-		if (cls_var.containsKey(var)) {
+		if (cls_var.containsKey(var_name)) {
             int ans = Super.sizeof();
             Enumeration<VarSymbol> i = varElements();
             while(i.hasMoreElements()) {
