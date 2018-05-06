@@ -18,6 +18,7 @@ public class SymbolTable extends Symbol{
 	int var_id = 5;
 	int label_id = 0;
 	public Hashtable<VarSymbol, Integer> varID;
+	public Hashtable<String, Integer> funcID;
 	
 	// constructer
 	public SymbolTable() {
@@ -25,6 +26,7 @@ public class SymbolTable extends Symbol{
 		mainclass = null;
 		classes = new Hashtable<String, ClassSymbol>();
 		varID = new Hashtable<VarSymbol, Integer>();
+		funcID = new Hashtable<String, Integer>();
 		classes.put("Object", O);
 	}
 	public void setStatus(String C, String M) {
@@ -41,6 +43,21 @@ public class SymbolTable extends Symbol{
 	private VarSymbol getVarSymbol(String var) {
 		ClassSymbol cls = classes.get(presentClass);
 		MethodSymbol method = cls.cls_method.get(presentMethod);
+		if (method.hasVar(var))
+			return method.local_var.get(var);
+		
+		while(!cls.getName().equals("Object")) {
+			if (cls.hasVar(var))
+				return cls.getVar(var);
+			cls = cls.getSuper();
+		}
+		System.out.println("Using variable \""+var+"\" before defination.");
+		System.exit(0);
+		return null;
+	}
+	private VarSymbol getVarSymbol(String cls_name, String method_name, String var) {
+		ClassSymbol cls = classes.get(cls_name);
+		MethodSymbol method = cls.cls_method.get(method_name);
 		if (method.hasVar(var))
 			return method.local_var.get(var);
 		
@@ -166,23 +183,47 @@ public class SymbolTable extends Symbol{
 				System.exit(0);
 			}
 		}
+		
+		i = classes.elements();
+		while(i.hasMoreElements()) {
+			ClassSymbol temp = i.nextElement();
+			temp.getMethodTable();
+		}
 	}
 	
 	// To PIGLET
 	public void pigletMainInit() {
-		System.out.println("MOVE "+stkID+" HALLOCATE 512");
+		println("MOVE "+stkID+" HALLOCATE 512");
+
+		Iterator<String> i = classes.keySet().iterator();
+		while(i.hasNext()) {
+			String class_name = i.next();
+			if (class_name.equals("Object")) continue;
+			ClassSymbol temp = classes.get(class_name);
+			int method_size = temp.cls_method_offset.size() * 4;
+			String funcreg = getFuncTable(temp.getName());
+			
+			println("MOVE "+funcreg+" HALLOCATE "+method_size);
+			
+			Iterator<String> j = temp.cls_method_offset.keySet().iterator();
+			while(j.hasNext()) {
+				String method_name = (String) j.next();
+				int offset = temp.getMethodOffset(method_name);
+				println("HSTORE "+funcreg+" "+offset+" "+getMethodName(class_name, method_name));
+			}
+		}
 	}
 	
 	public String getMethodName() {
 		ClassSymbol cls = classes.get(presentClass);
 		MethodSymbol method = getMethodSymbol(cls, presentMethod);
-		return "METHOD_"+cls.getName()+"_"+method.getName()+"[1]";
+		return "METHOD_"+cls.getName()+"_"+method.getName();
 	}
 
 	public String getMethodName(String class_name, String method_name) {
 		ClassSymbol cls = classes.get(class_name);
 		MethodSymbol method = getMethodSymbol(cls, method_name);
-		return "METHOD_"+cls.getName()+"_"+method.getName()+"[1]";
+		return "METHOD_"+cls.getName()+"_"+method.getName();
     }
 	
 	public void println(String s) {
@@ -207,8 +248,22 @@ public class SymbolTable extends Symbol{
 		}
 	}
 	
+	public String getFuncTable(String cls) {
+		int ans = -1;
+		
+		if (funcID.containsKey(cls))
+			ans = funcID.get(cls);
+		else {
+			ans = var_id;
+			funcID.put(cls, var_id);
+			var_id++;			
+		}
+		return "TEMP "+ans;
+	}
+	
 	public String getID(String var) {
 		VarSymbol varsym = getVarSymbol(var);
+		if (varsym.getName().equals("this")) return "TEMP 0";
 		int ans = -1;
 		
 		if(varID.containsKey(varsym))
@@ -222,6 +277,23 @@ public class SymbolTable extends Symbol{
 		return "TEMP "+ans;
 	}
 	
+	public String getID(String cls, String method, String var) {
+		VarSymbol varsym = getVarSymbol(cls, method, var);
+		if (varsym.getName().equals("this")) return "TEMP 0";
+		int ans = -1;
+		
+		if(varID.containsKey(varsym))
+			ans = varID.get(varsym); 
+		else {
+			ans = var_id;
+			varID.put(varsym, var_id);
+			var_id++;
+		}
+		
+		return "TEMP "+ans;
+	}
+	
+	
 	public boolean isMember(String var) {
 		ClassSymbol cls = classes.get(presentClass);
 		return cls.hasVar(var);
@@ -229,11 +301,11 @@ public class SymbolTable extends Symbol{
 
 	public void push(String reg) {
         println("HSTORE "+stkID+" 0 "+reg);
-        println("MOVE "+stkID+" 4");
+        println("MOVE "+stkID+" PLUS "+stkID+" 4");
 	}
 	public void pop(String reg) {
+        println("MOVE "+stkID+" MINUS "+stkID+" 4");
         println("HLOAD "+reg+" "+stkID+" 0");
-        println("MOVE "+stkID+" -4");
 	}
 	
 	public String getLabel() {
@@ -246,6 +318,8 @@ public class SymbolTable extends Symbol{
 		MethodSymbol method= getMethodSymbol(cls, presentMethod);
 		Enumeration<VarSymbol> i = method.varElements();
 		
+		//push(ansID);
+		//push(tmpID);
 		while(i.hasMoreElements()) {
 			VarSymbol var = i.nextElement();
 			push(getID(var.getName()));
@@ -253,15 +327,18 @@ public class SymbolTable extends Symbol{
 	}
 	
 	public void call(String cls, String method, String explst) {
-        String func = getMethodName(cls, method);
 		ClassSymbol cls_sym = classes.get(cls);
 		MethodSymbol method_sym = getMethodSymbol(cls_sym, method);
 		
+		for (int i = method_sym.argSize()-1; i >= 0; --i) {
+			pop(getID(cls, method, method_sym.args_var.get(i).getName()));
+		}
 		pop("TEMP 0");
-		for (int i = method_sym.argSize()-1; i >= 0; --i)
-			pop(getID(method_sym.args_var.get(i).getName()));
+		
+		println("HLOAD "+tmpID+" TEMP 0 0");
+		println("HLOAD "+tmpID+" "+tmpID+" "+cls_sym.getMethodOffset(method));
 
-	    println("CALL "+func+" ( TEMP 0 )");
+	    println("MOVE "+ansID+" CALL "+tmpID+" ( TEMP 0 )");
 	}
 	
 	public void restore() {
@@ -277,6 +354,8 @@ public class SymbolTable extends Symbol{
 		
 		for (int idx = var_lst.size()-1; idx >= 0; --idx)
 			pop(getID(var_lst.get(idx)));
+		//pop(tmpID);
+		//pop(ansID);
 	}
 
 	public int sizeof(String class_name) {
@@ -303,6 +382,5 @@ public class SymbolTable extends Symbol{
 		}
 		return ret;
 	}
-
 }
 

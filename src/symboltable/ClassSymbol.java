@@ -7,6 +7,7 @@ public class ClassSymbol extends Symbol {
 	ClassSymbol cls_super;
 	Hashtable<String, VarSymbol> cls_var;
 	Hashtable<String, MethodSymbol> cls_method;
+	Hashtable<String, Integer> cls_method_offset;
 	
 	public ClassSymbol()
 	{
@@ -103,21 +104,14 @@ public class ClassSymbol extends Symbol {
 
     // for PIGLET
     public int sizeof() {
-        if (sym_name.equals("Object")) return 0;
+        if (sym_name.equals("Object")) return 4;
         ClassSymbol Super = getSuper();
-        int ans = Super.sizeof();
-        Enumeration<VarSymbol> i = varElements();
-        while(i.hasMoreElements()) {
-            VarSymbol var = i.nextElement();
-            String type = var.getType();
-            if (type.equals("int"))
-                ans += 4;
-        }
+        int ans = Super.sizeof() + cls_var.size() * 4;
         return ans;
     }
 
     public int getOffset(String var_name) {
-        if (sym_name.equals("Object")) return 0;
+        if (sym_name.equals("Object")) return 4;
         ClassSymbol Super = getSuper();
 		if (cls_var.containsKey(var_name)) {
             int ans = Super.sizeof();
@@ -126,14 +120,38 @@ public class ClassSymbol extends Symbol {
                 VarSymbol var = i.nextElement();
                 if (var_name.equals(var.getName()))
                     break;
-                String type = var.getType();
-                if (type.equals("int"))
-                    ans += 4;
+                ans += 4;
             }
             return ans;
         }
         else
             return Super.getOffset(var_name);
+    }
+    
+    public int getMethodOffset(String method) {
+    	if (!cls_method_offset.containsKey(method)) return -1;
+    	return cls_method_offset.get(method);
+    }
+    
+    public void getMethodTable() {
+        if (cls_method_offset != null) return;
+		cls_method_offset = new Hashtable<String, Integer>();
+    	if (sym_name.equals("Object")) return;
+        ClassSymbol Super = getSuper();
+        Super.getMethodTable();
+        int maxo = Super.cls_method_offset.size() * 4;
+        Enumeration<MethodSymbol> i = methodElements();
+        while(i.hasMoreElements()) {
+        	MethodSymbol method = i.nextElement();
+        	String method_name = method.getName();
+        	int super_offset = Super.getMethodOffset(method_name);
+        	if (super_offset == -1) {
+        		cls_method_offset.put(method_name, maxo);
+        		maxo += 4;
+        	}
+        	else 
+        		cls_method_offset.put(method_name, super_offset);
+        }
     }
 	
 	// just for debug

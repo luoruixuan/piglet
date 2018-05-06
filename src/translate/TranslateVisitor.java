@@ -89,7 +89,6 @@ public class TranslateVisitor extends GJDepthFirst<String, SymbolTable> {
 	   n.f15.accept(this, argu);
 	   argu.addIndent(-2);
 	   argu.println("END");
-	   n.f15.accept(this, argu);
 	   return null;
    }
 
@@ -153,7 +152,7 @@ public class TranslateVisitor extends GJDepthFirst<String, SymbolTable> {
     */
    public String visit(MethodDeclaration n, SymbolTable argu) {
 	   argu.setMethod(n.f2.f0.toString());
-	   argu.println(argu.getMethodName());
+	   argu.println(argu.getMethodName()+"[1]");
 	   argu.println("BEGIN");
 	   argu.addIndent(2);
 	   n.f8.accept(this, argu);
@@ -316,10 +315,10 @@ public class TranslateVisitor extends GJDepthFirst<String, SymbolTable> {
 	   L2 = argu.getLabel();
 	   String expType = n.f2.accept(this, argu);
 	   argu.println("CJUMP "+argu.ansID+" "+L1);
-	   n.f6.accept(this, argu);
+	   n.f4.accept(this, argu);
 	   argu.println("JUMP "+L2);
 	   System.out.println(L1);
-	   n.f4.accept(this, argu);
+	   n.f6.accept(this, argu);
 	   System.out.println(L2);
 	   argu.println("NOOP");
 	   if (!expType.equals("boolean")) {
@@ -343,7 +342,7 @@ public class TranslateVisitor extends GJDepthFirst<String, SymbolTable> {
 	   L2 = argu.getLabel();
 	   System.out.println(L0);
 	   String expType = n.f2.accept(this, argu);
-	   argu.println("CJUMP "+argu.ansID+" "+L1);
+	   argu.println("CJUMP MINUS 1 "+argu.ansID+" "+L1);
 	   argu.println("JUMP "+L2);
 	   System.out.println(L1);
 	   n.f4.accept(this, argu);
@@ -638,11 +637,13 @@ public class TranslateVisitor extends GJDepthFirst<String, SymbolTable> {
     */
    public String visit(ArrayAllocationExpression n, SymbolTable argu) {
 	   String type3 = n.f3.accept(this, argu);
-	   argu.println("MOVE "+argu.ansID+" HALLOCATE "+argu.ansID);
+	   argu.println("MOVE "+argu.tmpID+" "+argu.ansID);
+	   argu.println("MOVE "+argu.ansID+" HALLOCATE PLUS "+argu.tmpID+" 4");
 	   if (!type3.equals("int")) {
 		   //System.out.println("Type error. Array must be allocated with an integer length.");
 		   System.exit(1);
 	   }
+	   argu.println("HSTORE "+argu.ansID+" 0 "+argu.tmpID);
 	   return "int*";
    }
 
@@ -655,6 +656,7 @@ public class TranslateVisitor extends GJDepthFirst<String, SymbolTable> {
    public String visit(AllocationExpression n, SymbolTable argu) {
 	   String cls = n.f1.f0.toString();
 	   argu.println("MOVE "+argu.ansID+" HALLOCATE "+argu.sizeof(cls));
+	   argu.println("HSTORE "+argu.ansID+" 0 "+argu.getFuncTable(cls));
 	   if (!argu.hasClasses(cls)) {
 		   //System.out.println("No type " + cls + ".");
 		   System.exit(1);
