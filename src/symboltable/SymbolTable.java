@@ -11,11 +11,11 @@ public class SymbolTable extends Symbol{
 	public String presentClass, presentMethod;
 	// For PIGLET
 	public int default_indent;
-	public String ansID = "TEMP 21";
-	public String tmpID = "TEMP 22";
-    public String stkID = "TEMP 23";
-    public String sttID = "TEMP 24";
-	int var_id = 25;
+	public String ansID = "TEMP 1";
+	public String tmpID = "TEMP 2";
+    public String stkID = "TEMP 3";
+    public String sttID = "TEMP 4";
+	int var_id = 5;
 	int label_id = 0;
 	public Hashtable<VarSymbol, Integer> varID;
 	
@@ -175,19 +175,13 @@ public class SymbolTable extends Symbol{
 	public String getMethodName() {
 		ClassSymbol cls = classes.get(presentClass);
 		MethodSymbol method = getMethodSymbol(cls, presentMethod);
-		if (method.argSize() == 0)
-			return "METHOD_"+cls.getName()+"_"+method.getName();
-		else
-			return "METHOD_"+cls.getName()+"_"+method.getName()+"["+method.argSize()+"]";
+		return "METHOD_"+cls.getName()+"_"+method.getName()+"[1]";
 	}
 
 	public String getMethodName(String class_name, String method_name) {
 		ClassSymbol cls = classes.get(class_name);
 		MethodSymbol method = getMethodSymbol(cls, method_name);
-		if (method.argSize() == 0)
-			return "METHOD_"+cls.getName()+"_"+method.getName();
-		else
-			return "METHOD_"+cls.getName()+"_"+method.getName()+"["+method.argSize()+"]";
+		return "METHOD_"+cls.getName()+"_"+method.getName()+"[1]";
     }
 	
 	public void println(String s) {
@@ -233,12 +227,12 @@ public class SymbolTable extends Symbol{
 	}
 
 	public void push(String reg) {
-        System.out.println("HSTORE "+stkID+" 0 "+reg);
-        System.out.println("MOVE "+stkID+" 4");
+        println("HSTORE "+stkID+" 0 "+reg);
+        println("MOVE "+stkID+" 4");
 	}
 	public void pop(String reg) {
-        System.out.println("HLOAD "+reg+" "+stkID+" 0");
-        System.out.println("MOVE "+stkID+" -4");
+        println("HLOAD "+reg+" "+stkID+" 0");
+        println("MOVE "+stkID+" -4");
 	}
 	
 	public String getLabel() {
@@ -247,18 +241,41 @@ public class SymbolTable extends Symbol{
 	}
 	
 	public void save() {
-	    for (int i = 0; i <= 22; ++i)
-            push("TEMP "+i);
+		ClassSymbol cls = classes.get(presentClass);
+		MethodSymbol method= getMethodSymbol(cls, presentMethod);
+		Enumeration<VarSymbol> i = method.varElements();
+		
+		while(i.hasMoreElements()) {
+			VarSymbol var = i.nextElement();
+			push(getID(var.getName()));
+		}
 	}
 	
 	public void call(String cls, String method, String explst) {
         String func = getMethodName(cls, method);
-	    System.out.println("CALL "+func);
+		ClassSymbol cls_sym = classes.get(cls);
+		MethodSymbol method_sym = getMethodSymbol(cls_sym, method);
+		
+		pop("TEMP 0");
+		for (int i = method_sym.argSize()-1; i >= 0; --i)
+			pop(getID(method_sym.args_var.get(i).getName()));
+
+	    println("CALL "+func+" ( TEMP 0 )");
 	}
 	
 	public void restore() {
-	    for (int i = 22; i >= 0; --i)
-            pop("TEMP "+i);
+		ClassSymbol cls = classes.get(presentClass);
+		MethodSymbol method= getMethodSymbol(cls, presentMethod);
+		Vector<String> var_lst = new Vector<String>();
+		Enumeration<VarSymbol> i = method.varElements();
+		
+		while(i.hasMoreElements()) {
+			VarSymbol var = i.nextElement();
+			var_lst.addElement(var.getName());
+		}
+		
+		for (int idx = var_lst.size()-1; idx >= 0; --idx)
+			pop(getID(var_lst.get(idx)));
 	}
 
 	public int sizeof(String class_name) {

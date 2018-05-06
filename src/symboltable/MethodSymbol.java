@@ -4,6 +4,7 @@ import java.util.*;
 public class MethodSymbol extends Symbol {
 	String method_type;
 	Vector<String> args_type;
+	Vector<VarSymbol> args_var;
 	Hashtable<String, VarSymbol> local_var;
 	
 	MethodSymbol()
@@ -29,6 +30,7 @@ public class MethodSymbol extends Symbol {
 			System.exit(0);
 		}
 		args_type.addElement(var.getType());
+		args_var.addElement(var);
 		local_var.put(var.getName(), var);
 	}
 	public Enumeration<String> argElements() { return args_type.elements(); }
