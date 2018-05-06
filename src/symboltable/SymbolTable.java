@@ -13,8 +13,8 @@ public class SymbolTable extends Symbol{
 	public int default_indent;
 	public String ansID = "TEMP 21";
 	public String tmpID = "TEMP 22";
-	// TEMP 23 for stack address
-	// TEMP 24 for stack pointer
+    public String stkID = "TEMP 23";
+    public String sttID = "TEMP 24";
 	int var_id = 25;
 	int label_id = 0;
 	public Hashtable<VarSymbol, Integer> varID;
@@ -169,7 +169,7 @@ public class SymbolTable extends Symbol{
 	
 	// To PIGLET
 	public void pigletMainInit() {
-		
+		System.out.println("MOVE "+stkID+" HALLOCATE 512");
 	}
 	
 	public String getMethodName() {
@@ -180,6 +180,15 @@ public class SymbolTable extends Symbol{
 		else
 			return "METHOD_"+cls.getName()+"_"+method.getName()+"["+method.argSize()+"]";
 	}
+
+	public String getMethodName(String class_name, String method_name) {
+		ClassSymbol cls = classes.get(class_name);
+		MethodSymbol method = getMethodSymbol(cls, method_name);
+		if (method.argSize() == 0)
+			return "METHOD_"+cls.getName()+"_"+method.getName();
+		else
+			return "METHOD_"+cls.getName()+"_"+method.getName()+"["+method.argSize()+"]";
+    }
 	
 	public void println(String s) {
 		for (int i = 0; i < default_indent; i++)
@@ -224,10 +233,12 @@ public class SymbolTable extends Symbol{
 	}
 
 	public void push(String reg) {
-		
+        System.out.println("HSTORE "+stkID+" 0 "+reg);
+        System.out.println("MOVE "+stkID+" 4");
 	}
 	public void pop(String reg) {
-		
+        System.out.println("HLOAD "+reg+" "+stkID+" 0");
+        System.out.println("MOVE "+stkID+" -4");
 	}
 	
 	public String getLabel() {
@@ -236,21 +247,23 @@ public class SymbolTable extends Symbol{
 	}
 	
 	public void save() {
-		
+	    for (int i = 0; i <= 22; ++i)
+            push("TEMP "+i);
 	}
 	
 	public void call(String cls, String method, String explst) {
-		
+        String func = getMethodName(cls, method);
+	    System.out.println("CALL "+func);
 	}
 	
 	public void restore() {
-		
+	    for (int i = 22; i >= 0; --i)
+            pop("TEMP "+i);
 	}
 
-	public int sizeof(String cls) {
-		ClassSymbol cls_var = classes.get(cls);
-		
-		return 0;
+	public int sizeof(String class_name) {
+		ClassSymbol cls = classes.get(class_name);
+		return cls.sizeof();
 	}
 	
 	public int getOffset(String var) {
@@ -259,8 +272,7 @@ public class SymbolTable extends Symbol{
 			System.out.println("BUG: invalid var symbol "+var+" in class: "+presentClass);
 			System.exit(1);
 		}
-		
-		
+		return cls.getOffset(var);
 	}
 	
 	// just for debug

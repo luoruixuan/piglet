@@ -100,6 +100,41 @@ public class ClassSymbol extends Symbol {
 		}
 		return true;
 	}
+
+    // for PIGLET
+    public int sizeof() {
+        if (sym_name.equals("Object")) return 0;
+        ClassSymbol Super = getSuper();
+        int ans = Super.sizeof();
+        Enumeration<VarSymbol> i = varElements();
+        while(i.hasMoreElements()) {
+            VarSymbol var = i.nextElement();
+            String type = var.getType();
+            if (type.equals("int"))
+                ans += 4;
+        }
+        return ans;
+    }
+
+    public int getOffset(String var_name) {
+        if (sym_name.equals("Object")) return 0;
+        ClassSymbol Super = getSuper();
+		if (cls_var.containsKey(var)) {
+            int ans = Super.sizeof();
+            Enumeration<VarSymbol> i = varElements();
+            while(i.hasMoreElements()) {
+                VarSymbol var = i.nextElement();
+                if (var_name.equals(var.getName()))
+                    break;
+                String type = var.getType();
+                if (type.equals("int"))
+                    ans += 4;
+            }
+            return ans;
+        }
+        else
+            return Super.getOffset(var_name);
+    }
 	
 	// just for debug
 	public String toString() {
